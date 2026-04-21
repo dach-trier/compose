@@ -1,3 +1,5 @@
+name: dach-trier
+
 services:
   tunnel:
     image: cloudflare/cloudflared:2026.3.0
