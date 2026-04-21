@@ -1,0 +1,11 @@
+services:
+  public-server:
+    image: ghcr.io/dach-trier/public-server:v1.0.0
+    restart: unless-stopped
+
+    env_file:
+      - ./env/public.env
+    environment:
+      GOOGLE_APPLICATION_CREDENTIALS: "/secrets/public-sa.json"
+    volumes:
+      - ./secrets/public-sa.json:/secrets/public-sa.json
