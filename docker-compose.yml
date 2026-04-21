@@ -15,9 +15,13 @@ services:
     image: ghcr.io/dach-trier/public-server:v1.0.0
     restart: unless-stopped
 
-    env_file:
-      - ./env/public.env
+    depends_on:
+      - tunnel
+
+    ports:
+      - "80:8080"
     environment:
+      PORT: "8080"
       GOOGLE_APPLICATION_CREDENTIALS: "/secrets/public-sa.json"
     volumes:
       - ./secrets/public-sa.json:/secrets/public-sa.json
