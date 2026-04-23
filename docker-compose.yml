@@ -12,7 +12,6 @@ services:
     networks:
       - web
 
-
   public-server:
     image: ghcr.io/dach-trier/public-server:v1.0.0
     restart: unless-stopped
@@ -29,6 +28,69 @@ services:
     networks:
       - web
 
+  portal-database:
+    image: postgres:18.3-alpine3.22
+    restart: unless-stopped
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      retries: 5
+      start_period: 10s
+
+    environment:
+      POSTGRES_USER:     postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB:       portal
+
+    volumes:
+      - portal_database:/var/lib/postgresql/18/docker
+
+    networks:
+      - web
+
+  portal-migration:
+    image: ghcr.io/dach-trier/portal-migration:v0.1.0
+    restart: "no"
+
+    depends_on:
+      portal-database:
+        condition: service_healthy
+
+    environment:
+      DB_HOST: "portal-database"
+      DB_PORT: "5432"
+      DB_USER: "postgres"
+      DB_PASS: "postgres"
+      DB_NAME: "portal"
+
+    networks:
+      - web
+
+  portal-server:
+    image: ghcr.io/dach-trier/portal-server:v0.1.0
+    restart: unless-stopped
+
+    depends_on:
+      - tunnel
+      - portal-migration
+
+    environment:
+      PORT: "80"
+      MODE: "release"
+
+      DB_HOST: "portal-database"
+      DB_PORT: "5432"
+      DB_USER: "postgres"
+      DB_PASS: "postgres"
+      DB_NAME: "portal"
+
+    networks:
+      - web
+
 networks:
   web:
     driver: bridge
+
+volumes:
+  portal_database:
