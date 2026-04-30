@@ -16,9 +16,6 @@ services:
     image: ghcr.io/dach-trier/public-server:v1.0.0
     restart: unless-stopped
 
-    depends_on:
-      - tunnel
-
     environment:
       PORT: "80"
       GOOGLE_APPLICATION_CREDENTIALS: "/secrets/public-sa.json"
@@ -37,6 +34,13 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB:       portal
 
+    healthcheck:
+      test: ["CMD-SHELL", "psql -h localhost -U $${POSTGRES_USER} -d $${POSTGRES_DB} -c 'SELECT 1'"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
     volumes:
       - ./volumes/portal_database:/var/lib/postgresql/18/docker
 
@@ -48,7 +52,8 @@ services:
     restart: no
 
     depends_on:
-      - portal-database
+      portal-database:
+        condition: service_healthy
 
     environment:
       DB_HOST: "portal-database"
@@ -65,10 +70,12 @@ services:
     restart: unless-stopped
 
     depends_on:
-      - tunnel
-      - portal-database
-      - portal-migration
+      portal-database:
+        condition: service_healthy
 
+      portal-migration:
+        condition: service_completed_successfully
+        
     environment:
       PORT: "80"
       MODE: "release"
